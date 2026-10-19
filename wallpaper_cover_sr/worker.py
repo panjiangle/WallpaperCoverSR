@@ -135,6 +135,8 @@ class Worker:
         bridge = None
         last_key = None
         last_file = ''
+        published_info = None
+        next_reclaim = 0
         next_poll = 0
         next_hd_retry = float('inf')
         try:
@@ -214,6 +216,7 @@ class Worker:
                                     continue
                                 if not bridge.enabled or key != last_key or result['file'] != last_file:
                                     await bridge.publish(session, latest, Path(result['file']).read_bytes())
+                                    published_info = latest
                                 last_file = result['file']
                                 last_key = key
                                 next_hd_retry = time.monotonic() + 60 if result.get('hd_retry') else float('inf')
@@ -233,7 +236,33 @@ class Worker:
                     if bridge.enabled and session:
                         actual = manager.get_current_session()
                         actual_id = actual.source_app_user_model_id if actual else ''
-                        bridge.sync(session, reclaim=actual_id == session_id)
+                        if actual_id == session_id and time.monotonic() >= next_reclaim:
+                            newest = await read_cover(session)
+                            if newest is None or any(newest[k] != published_info[k]
+                                                     for k in ('title', 'artist', 'hash')):
+                                self.poke()
+                                continue
+                            if (self.quit.is_set() or self.revision != revision
+                                    or not self.settings.get()['enabled']):
+                                continue
+                            _, recovery_sources, recovery_current = source_snapshot(manager)
+                            if choose_source(recovery_sources, recovery_current, session_id,
+                                             self.settings.get().get('source_app', '')) != session_id:
+                                self.wake()
+                                continue
+                            # Updating metadata on an existing SMTC session does not
+                            # restore Windows' current-session selection. Recreate
+                            # only after our real source takes over; reuse its PNG.
+                            bridge.close()
+                            bridge = MediaBridge(self.loop)
+                            await bridge.publish(session, newest, Path(last_file).read_bytes())
+                            next_reclaim = time.monotonic() + 2
+                            LOG.info('Restored enhanced media session after source takeover')
+                        else:
+                            bridge.sync(session)
+                        if actual_id == session_id:
+                            await self.wait(min(8, max(0.1, next_reclaim - time.monotonic())))
+                            continue
                     await self.wait(8)
                 except backend.Cancelled:
                     last_key = None

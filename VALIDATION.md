@@ -1,6 +1,14 @@
-# Validation scope — 0.3.0
+# Validation scope — 0.3.1
 
 2026-10-18, Windows 11 x64, Wallpaper Engine 2.8.42, RTX 4070 SUPER, NetEase 3.1.41.205529. This is single-machine validation, not a cross-hardware certification.
+
+## 0.3.1 recovery update — 2026-10-19
+
+The old metadata-only reclaim call failed to restore Windows' current media session after another manual SMTC publisher became current. Closing and recreating the enhanced MediaPlayer restored selection on this host. The worker now performs this only when its selected real source is current, checks that song and settings are still valid, and reuses the already processed PNG. Recovery is limited to once per two seconds while the source keeps reclaiming; unrelated current players retain normal source-selection behavior.
+
+A regression test at the actual worker loop failed before the fix and passed afterward. The suite now has 30 passing checks, including unchanged-cover takeover, unrelated-player handoff, recovery throttling, song changes and disable during recovery. A separate native Windows process repeatedly recreated a manual source session carrying actual player metadata/artwork; the real worker restored its enhanced session three times in 0.02–0.09 seconds in this local sample, with output PNG bytes preserved. These are synthetic takeover checks on one machine, not a guarantee of recovery latency across systems.
+
+## Original 0.3.0 validation
 
 ## New original-artwork path
 

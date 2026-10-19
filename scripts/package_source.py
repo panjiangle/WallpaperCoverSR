@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from wallpaper_cover_sr import __version__
 ITEMS = ['wallpaper_cover_sr', 'scripts', 'tests', '.github', 'site', 'docs/technical.md', 'run.py',
-         'requirements.txt', '.gitignore', 'README.md', 'LICENSE',
+         'requirements.txt', '.gitignore', 'README.md', 'CHANGELOG.md', 'LICENSE',
          'THIRD_PARTY_NOTICES.md', 'VALIDATION.md', '使用说明.txt']
 
 

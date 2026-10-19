@@ -1,4 +1,4 @@
-Wallpaper Cover SR 0.3.0（Windows x64 便携版）
+Wallpaper Cover SR 0.3.1（Windows x64 便携版）
 
 1. 完整解压，运行 WallpaperCoverSR.exe。
 2. 正常播放音乐、应用原壁纸。原壁纸应当已能读取 Windows 歌曲封面。

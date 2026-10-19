@@ -134,3 +134,94 @@ class WorkerTests(unittest.IsolatedAsyncioTestCase):
                  patch.object(worker.integration, 'engine_running', return_value=True), \
                  patch.object(worker.backend, 'process', return_value=result):
                 await asyncio.wait_for(service.run(), 2)
+
+
+class RecoveryTests(unittest.IsolatedAsyncioTestCase):
+    async def test_source_takeover_recreates_session_without_reprocessing_cover(self):
+        await self.check_takeover('cloudmusic.exe', 2)
+
+    async def test_unrelated_player_is_not_reclaimed(self):
+        await self.check_takeover('Chrome', 1)
+
+    async def test_song_change_during_recovery_does_not_publish_old_artwork(self):
+        await self.check_takeover('cloudmusic.exe', 1, changed=True)
+
+    async def test_disable_during_recovery_does_not_reenable_session(self):
+        await self.check_takeover('cloudmusic.exe', 1, disabled=True)
+
+    async def test_persistent_takeover_is_throttled(self):
+        await self.check_takeover('cloudmusic.exe', 2, persistent=True)
+
+    async def check_takeover(self, takeover_id, expected_publications,
+                            changed=False, disabled=False, persistent=False):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            image = root / 'enhanced.png'
+            image.write_bytes(b'enhanced PNG')
+            settings = SimpleNamespace(get=lambda: {'enabled': True, 'scale': 4,
+                'model': 'realesrgan-x4plus', 'cache_mb': 128, 'source_app': ''})
+            source = SimpleNamespace(source_app_user_model_id='cloudmusic.exe',
+                get_playback_info=lambda: SimpleNamespace(playback_status=worker.PlaybackStatus.PLAYING),
+                add_media_properties_changed=lambda callback: 1,
+                add_playback_info_changed=lambda callback: 2,
+                remove_media_properties_changed=lambda token: None,
+                remove_playback_info_changed=lambda token: None)
+            service = worker.Worker(settings)
+            active = source
+            publications, bridges = [], []
+            manager = SimpleNamespace(get_sessions=lambda: [source],
+                get_current_session=lambda: active,
+                add_sessions_changed=lambda callback: 1,
+                add_current_session_changed=lambda callback: 2,
+                remove_sessions_changed=lambda token: None,
+                remove_current_session_changed=lambda token: None)
+            class Manager:
+                @staticmethod
+                async def request_async(): return manager
+            metadata = {'title': 'Same song', 'artist': 'Artist', 'hash': 'same', 'data': b'small PNG'}
+            reads = 0
+            async def read_cover(session):
+                nonlocal reads
+                reads += 1
+                result = dict(metadata)
+                if reads == 3 and (changed or disabled):
+                    service.stop()
+                    if changed: result.update(title='Next song', hash='new')
+                    if disabled: settings.get = lambda: {'enabled': False}
+                return result
+            class Bridge:
+                def __init__(self, loop):
+                    self.enabled = False
+                    self.closed = False
+                    bridges.append(self)
+                def disable(self): self.enabled = False
+                async def publish(self, original, info, data):
+                    nonlocal active
+                    self.enabled = True
+                    publications.append((original, info, data))
+                    # Windows selects the real player again without changing the cover.
+                    active = SimpleNamespace(source_app_user_model_id=takeover_id)
+                    if len(publications) == 2 and not persistent:
+                        active = SimpleNamespace(source_app_user_model_id=APP_ID)
+                        service.stop()
+                def sync(self, original, reclaim=False): pass
+                def close(self): self.closed = True; self.enabled = False
+            waits = 0
+            async def wait(seconds):
+                nonlocal waits
+                waits += 1
+                if waits == 3: service.stop()
+            service.wait = wait
+            result = {'file': str(image), 'input': [135, 135], 'output': [1024, 1024],
+                      'cache_hit': True, 'seconds': 0.01, 'model': 'none'}
+            with patch.object(worker, 'DATA', root), patch.object(worker, 'Manager', Manager), \
+                 patch.object(worker, 'MediaBridge', Bridge), patch.object(worker, 'read_cover', read_cover), \
+                 patch.object(worker.integration, 'engine_running', return_value=True), \
+                 patch.object(worker.covers, 'process', return_value=result) as process, \
+                 patch.object(worker.backend, 'trim_cache'):
+                await asyncio.wait_for(service.run(), 1)
+            self.assertEqual(len(publications), expected_publications)
+            self.assertEqual(len(bridges), expected_publications)
+            self.assertTrue(all(bridge.closed for bridge in bridges))
+            self.assertTrue(all(row[2] == b'enhanced PNG' for row in publications))
+            process.assert_called_once()

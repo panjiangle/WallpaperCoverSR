@@ -14,7 +14,7 @@ for name in FILES:
     target.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(ROOT / 'vendor' / 'realesrgan' / name, target)
 shutil.copytree(ROOT / 'vendor' / 'licenses', dest / 'licenses' / 'backend', dirs_exist_ok=True)
-for name in ['README.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md', '使用说明.txt', 'VALIDATION.md']:
+for name in ['README.md', 'CHANGELOG.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md', '使用说明.txt', 'VALIDATION.md']:
     shutil.copy2(ROOT / name, dest / name)
 shutil.copytree(ROOT / 'site', dest / 'site', dirs_exist_ok=True)
 (dest / 'docs').mkdir(exist_ok=True)

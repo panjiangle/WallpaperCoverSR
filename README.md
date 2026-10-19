@@ -22,15 +22,17 @@
 
 <div align="center">
   <img src="site/assets/settings.png" width="560" alt="设置窗口示意：封面增强、高清原图优先、回退超分倍率和开机启动">
-  <p><sub>实际界面截图，歌曲信息为示例。当前版本 v0.3.0。</sub></p>
+  <p><sub>实际界面截图，歌曲信息为示例。</sub></p>
 </div>
+
+**v0.3.1 更新：** 修复原播放器重新取得当前媒体位置后，壁纸偶尔仍显示低清封面的问题；自动恢复时复用已处理图片。详见 [更新记录](CHANGELOG.md)。
 
 ## 下载安装
 
 **系统要求：Windows 10/11 x64、Wallpaper Engine 和可提供 Windows 媒体信息的音乐播放器。** 超分回退需要支持 Vulkan 的显卡驱动。高清取图已在网易云 Windows 3.1.41.205529 验证。
 
 1. 打开 [最新版本下载页](https://github.com/panjiangle/WallpaperCoverSR/releases/latest)。
-2. 在 **Assets** 下载 `WallpaperCoverSR-0.3.0-windows-x64.zip`，约 **61 MB**。普通用户无需下载 Source code 或源码包。
+2. 在 **Assets** 下载 `WallpaperCoverSR-0.3.1-windows-x64.zip`，约 **61 MB**。普通用户无需下载 Source code 或源码包。
 3. **完整解压**到一个固定文件夹，例如 `D:\Apps\WallpaperCoverSR`。
 4. 打开解压后的 `WallpaperCoverSR.exe`。
 

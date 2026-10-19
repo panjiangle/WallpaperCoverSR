@@ -79,7 +79,7 @@ py -3.13 -m venv .venv
 powershell -ExecutionPolicy Bypass -File scripts\build.ps1
 ```
 
-输出为 `release/WallpaperCoverSR-0.3.0-windows-x64.zip` 及源码 zip、SHA256 文件。使用 onedir，避免每次启动解压模型。GitHub Actions 会构建并上传 artifact；不自动公开发布 Release。上传源码包内容即可创建自己的仓库，不要上传 `.venv`、`vendor`、缓存或任何壁纸素材。
+输出为 `release/WallpaperCoverSR-0.3.1-windows-x64.zip` 及源码 zip、SHA256 文件。使用 onedir，避免每次启动解压模型。GitHub Actions 会构建并上传 artifact；不自动公开发布 Release。上传源码包内容即可创建自己的仓库，不要上传 `.venv`、`vendor`、缓存或任何壁纸素材。
 
 后端固定使用[官方 v0.2.5.0 的 20220424 Windows NCNN 压缩包](https://github.com/xinntao/Real-ESRGAN/releases/tag/v0.2.5.0)，下载时校验 SHA256。只打包程序、正式 OpenMP 运行时及两种图像模型，不包含示例视频、调试 DLL。这里固定的是经过验证的版本，并非宣称上游最新版本。
 

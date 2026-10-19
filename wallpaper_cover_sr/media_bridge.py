@@ -105,7 +105,7 @@ class MediaBridge:
             self.streams.popleft().close()
         self.sync(source)
 
-    def sync(self, source, reclaim=False):
+    def sync(self, source):
         if not self.enabled:
             return
         self.source = source
@@ -126,8 +126,6 @@ class MediaBridge:
             update.min_seek_time = max(timeline.start_time, timeline.min_seek_time)
             update.max_seek_time = min(timeline.end_time, max(update.min_seek_time, timeline.max_seek_time))
             self.controls.update_timeline_properties(update)
-        if reclaim:
-            self.updater.update()
 
     def disable(self):
         if self.enabled:
